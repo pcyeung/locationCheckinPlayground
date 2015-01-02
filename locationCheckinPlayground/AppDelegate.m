@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import <CoreLocation/CoreLocation.h>
 
 @interface AppDelegate ()
 
@@ -17,6 +18,17 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    
+    // Save log output to log file
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSString *fileName =[NSString stringWithFormat:@"%@.log",[NSDate date]];
+    NSString *logFilePath = [documentsDirectory stringByAppendingPathComponent:fileName];
+    freopen([logFilePath cStringUsingEncoding:NSASCIIStringEncoding],"a+",stderr);
+    
+    
+    
+    
     return YES;
 }
 
