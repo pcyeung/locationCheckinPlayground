@@ -20,6 +20,8 @@
     float radius;
     CLLocation * userLocation;
     NSThread* myThread;
+    bool isCheckinedRecently;
+    bool isLastCheckinAttemptSuccess;
 }
 
 
@@ -64,14 +66,27 @@
     
     
     // Points around the HK office
-    lats[0] = 22.280845;
-    longs[0] =  114.182224;
-
-    lats[1] = 22.280331;
-    longs[1] = 114.180969;
-
-    lats[2] = 22.280247;
-    longs[2] = 114.181733;
+//    lats[0] = 22.280845;
+//    longs[0] =  114.182224;
+//
+//    lats[1] = 22.280331;
+//    longs[1] = 114.180969;
+//
+//    lats[2] = 22.280247;
+//    longs[2] = 114.181733;
+    
+    // Points around EC Mall
+    // West Entrance
+    lats[0] = 39.978650;
+    longs[0] =  116.308013;
+    
+    // East Entrance
+    lats[1] = 39.978255;
+    longs[1] = 116.308747;
+    
+    // Service Counter
+    lats[2] = 39.978545;
+    longs[2] = 116.308113;
     
     for(int i = 0; i < 3; i++)
     {
@@ -83,9 +98,14 @@
 
 
     }
+    
+    // Init for thread
+    isCheckinedRecently = false;
+    isLastCheckinAttemptSuccess = false;
     myThread = [[NSThread alloc] initWithTarget:self selector:@selector(userInRange) object:nil];
 
     [myThread start];
+    
     
 }
 
@@ -115,11 +135,11 @@
 -(void) userInRange
 {
     while (true) {
-        if(userLocation != nil)
+        if(userLocation != nil && !isCheckinedRecently)
         {
             CLLocationAccuracy accuracy = userLocation.horizontalAccuracy;
             
-            
+            // Need to change to generic array size
             float results[3];
             bool resultsFlag[3];
             for(int i = 0; i < 3; i++)
@@ -127,7 +147,7 @@
                 resultsFlag[i] = NO;
             }
             
-            
+            // Need to change to generic array size loop
             for(int i = 0; i < 3; i++)
             {
                 CLLocation *location = [[CLLocation alloc]initWithCoordinate:cor[i] altitude:1 horizontalAccuracy:1 verticalAccuracy:-1 timestamp:nil];
@@ -140,6 +160,7 @@
                 }
             }
             
+            // Init, value not meaningful
             float min = -1;
             int minIndex = 0;
             
@@ -160,7 +181,7 @@
                     self.sendLabel.text = @"Not In Range";
                     self.sendLabel.textColor = [UIColor blackColor];
                     self.distanceLabel.text = [NSString stringWithFormat:@"--"];
-                    
+                    isLastCheckinAttemptSuccess = false;
                 }];
             }
             else if(min < threshold)
@@ -169,6 +190,8 @@
                     self.sendLabel.text = @"In Range";
                     self.sendLabel.textColor = [UIColor redColor];
                     self.distanceLabel.text = [NSString stringWithFormat:@"%d",(int)min];
+                    isCheckinedRecently = true;
+                    isLastCheckinAttemptSuccess = true;
                 }];
                 
             }else
@@ -177,15 +200,32 @@
                     self.sendLabel.text = @"Not In Range";
                     self.sendLabel.textColor = [UIColor blackColor];
                     self.distanceLabel.text = [NSString stringWithFormat:@"%d",(int)min];
-
+                    isLastCheckinAttemptSuccess = false;
                 }];
                 
             }
-            sleep(1);
+            
+            if(isLastCheckinAttemptSuccess)
+            {
+                // This is for checkin mall, so if there is a successful attempt, we can let it sleep for a long while
+                sleep(3000);
+            }
+            else
+            {
+                sleep(1);
+            }
         }
         else
         {
-            sleep(1);
+            if(userLocation == nil)
+            {
+                sleep(30);
+            }
+            else
+            {
+                isCheckinedRecently = false;
+                sleep(1);
+            }
         }
     }
 }
