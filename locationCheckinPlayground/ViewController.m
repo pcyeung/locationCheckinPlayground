@@ -27,6 +27,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
     
     // In terms of meters
     radius = 30.0;
@@ -44,50 +45,45 @@
     locationManager.delegate = self;
     locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation; // 100 m
     
-    SEL requestSelector = NSSelectorFromString(@"requestWhenInUseAuthorization");
     
+    // iOS 8 request
+    SEL requestSelector = NSSelectorFromString(@"requestWhenInUseAuthorization");
     if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusNotDetermined &&
         [locationManager respondsToSelector:requestSelector]) {
         //        [locationManager requestAlwaysAuthorization];
         [locationManager requestWhenInUseAuthorization];
-        [locationManager startMonitoringSignificantLocationChanges];
+        [locationManager startUpdatingLocation];
         
     } else {
-        [locationManager startMonitoringSignificantLocationChanges];
+        [locationManager startUpdatingLocation];
     }
     
     
-    
-    [locationManager startUpdatingLocation];
-    
-    
-    // Do any additional setup after loading the view, typically from a nib.
-    
-    
-    
     // Points around the HK office
-//    lats[0] = 22.280845;
-//    longs[0] =  114.182224;
-//
-//    lats[1] = 22.280331;
-//    longs[1] = 114.180969;
-//
-//    lats[2] = 22.280247;
-//    longs[2] = 114.181733;
+    lats[0] = 22.280845;
+    longs[0] =  114.182224;
+
+    lats[1] = 22.280331;
+    longs[1] = 114.180969;
+
+    lats[2] = 22.280247;
+    longs[2] = 114.181733;
     
     // Points around EC Mall
-    // West Entrance
-    lats[0] = 39.978650;
-    longs[0] =  116.308013;
+//    // West Entrance
+//    lats[0] = 39.978650;
+//    longs[0] =  116.308013;
+//    
+//    // East Entrance
+//    lats[1] = 39.978255;
+//    longs[1] = 116.308747;
+//    
+//    // Service Counter
+//    lats[2] = 39.978545;
+//    longs[2] = 116.308113;
     
-    // East Entrance
-    lats[1] = 39.978255;
-    longs[1] = 116.308747;
     
-    // Service Counter
-    lats[2] = 39.978545;
-    longs[2] = 116.308113;
-    
+    // Map view init
     for(int i = 0; i < 3; i++)
     {
         cor[i] = CLLocationCoordinate2DMake(lats[i], longs[i]);
@@ -105,6 +101,9 @@
     myThread = [[NSThread alloc] initWithTarget:self selector:@selector(userInRange) object:nil];
 
     [myThread start];
+    
+    
+    
     
     
 }
@@ -207,8 +206,19 @@
             
             if(isLastCheckinAttemptSuccess)
             {
+                // Turn off location manager at this point
+                [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                    [locationManager stopUpdatingLocation];
+                }];
+
                 // This is for checkin mall, so if there is a successful attempt, we can let it sleep for a long while
-                sleep(3000);
+                sleep(3000); // 3000/60 = 50 minutes
+                
+                // Turn it back on
+                [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                    [locationManager startUpdatingLocation];
+                }];
+
             }
             else
             {
@@ -219,7 +229,20 @@
         {
             if(userLocation == nil)
             {
+                // Turn off location manager at this point
+                [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                    [locationManager stopUpdatingLocation];
+                }];
+
+                
                 sleep(30);
+                
+                // Turn it back on
+                [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                    [locationManager startUpdatingLocation];
+                }];
+
+
             }
             else
             {
@@ -229,6 +252,7 @@
         }
     }
 }
+
 
 - (IBAction)locate:(id)sender {
     MKCoordinateRegion region;
